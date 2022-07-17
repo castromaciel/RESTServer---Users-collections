@@ -30,21 +30,11 @@ const postUsers = async(req, res = response) => {
   //NO CONFIAR EN LA PERSONA DE FRONTEND
 
   //Verificar si el correo existe
-  const existEmail = await User.findOne({ email })
-  if( existEmail ){
-    return res.status(400).json({
-      headers:{
-        errorCode: "400",
-        errorMsg: "The entered email already exists."
-      }
-    })
-  }
-
 
   //Encriptar 
   //Salt es el numero de vueltas es el numero de vueltas que se quieren hacer para hacer más complicado el metodo de encriptacion. por defecto es 10.
   const salt = bcrypt.genSaltSync();
-  user.password = bcrypt.hashSync( password, salt)
+  user.password = bcrypt.hashSync( password, salt )
 
   //Guardar en db
   await user.save()
@@ -52,7 +42,8 @@ const postUsers = async(req, res = response) => {
   res.status(200).json({
     headers:{
       errorCode: "200",
-      errorMsg: "User created successfully"
+      errorMsg: "User created successfully",
+      timestamp: new Date()
     },
     data:{
       user,
@@ -60,13 +51,29 @@ const postUsers = async(req, res = response) => {
   })
 }
 
-const putUsers = (req, res = response) => {
+const putUsers = async(req, res = response) => {
   
-  const id = req.params.id
+  const { id } = req.params;
+  const { _id, password, google, email, ...rest } = req.body;
 
-  res.json({
-    description: "put API - controller",
-    id
+  //TODO Validar conta db.-
+  if( password ){
+    const salt = bcrypt.genSaltSync();
+    rest.password = bcrypt.hashSync( password, salt )
+  }
+
+  // el id, no es un id de mongo. 
+  const user = await User.findByIdAndUpdate(id, rest)
+
+  res.status(201).json({
+    headers:{
+      errorCode: "201",
+      errorMsg: "User edited successfully",
+      timestamp: new Date()
+    },
+    data:{
+      user,
+    }
   });
 }
 
