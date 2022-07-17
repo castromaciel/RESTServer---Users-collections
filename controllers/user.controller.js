@@ -2,17 +2,37 @@ const { response, request } = require('express')
 const bcrypt = require('bcryptjs')
 const User = require('../models/user')
 
-const getUsers = (req = request, res = response) => {
+const getUsers = async (req = request, res = response) => {
 
-  const {q, name = 'Noname' , apikey, page = 1, limit = 10} = req.query
-  
-  res.json({
-    description: "get API - controller",
-    q,
-    name,
-    apikey,
-    page,
-    limit
+  // const {q, name = 'Noname' , apikey, page = 1, limit = 10} = req.query
+  const query = { status: true }
+  const { limit = 5, from = 0 } = req.query;
+
+  //disparar dos  sentencias de manera simultanea
+
+  // const users = await User.find( query )
+  //   .skip( Number(from) )
+  //   .limit( Number(limit) )
+
+  // const total = await User.countDocuments( query );
+
+  const [total, users] = await Promise.all([
+    User.countDocuments( query ),
+    User.find( query )
+      .skip( Number(from) )
+      .limit( Number(limit) )
+  ])
+
+  res.status(200).json({
+    headers:{
+      errorCode: 200,
+      errorMsg: "Get users succesfully",
+      timestamp: new Date()
+    },
+    data:{
+      total,
+      users
+    } 
   });
 
 }
@@ -41,7 +61,7 @@ const postUsers = async(req, res = response) => {
 
   res.status(200).json({
     headers:{
-      errorCode: "200",
+      errorCode: 200,
       errorMsg: "User created successfully",
       timestamp: new Date()
     },
@@ -67,7 +87,7 @@ const putUsers = async(req, res = response) => {
 
   res.status(201).json({
     headers:{
-      errorCode: "201",
+      errorCode: 201,
       errorMsg: "User edited successfully",
       timestamp: new Date()
     },
@@ -84,10 +104,25 @@ const patchUsers = (req, res = response) => {
   });
 }
 
-const deleteUsers = (req, res = response) => {
+const deleteUsers = async (req, res = response) => {
   
-  res.json({
-    description: "delete API - controller"
+  const { id } = req.params
+
+  // const user = await User.findByIdAndDelete( id )
+  const user = await User.findByIdAndUpdate( id, {status: false})
+
+  
+  res.status(200).json({
+    headers:{
+      errorCode: 200,
+      errorMsg: "User deleted successfully",
+      timestamp: new Date()
+    },
+    data:{
+      description: `User ${user.name} was deleted`,
+      user,
+    }
+
   });
 }
 
